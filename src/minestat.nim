@@ -68,15 +68,16 @@ proc initMineStat*(address: string; port: int; timeout = DefaultTimeout): Future
   let startTime = getTime()
 
   var socket = newAsyncSocket()
-  await socket.connect(address, Port(port))
+  try:
+    await socket.connect(address, Port(port))
+    result.latency = (getTime() - startTime).inMilliseconds
 
-  result.latency = (getTime() - startTime).inMilliseconds
-
-  await socket.send("\xFE\x01")
-
-  let data = await socket.recv(512).withTimeout(timeout)
-  if data.isSome and data.get.len > 0:
-    parseServerResponse(data.get, result)
+    await socket.send("\xFE\x01")
+    let data = await socket.recv(512).withTimeout(timeout)
+    if data.isSome and data.get.len > 0:
+      parseServerResponse(data.get, result)
+  except OSError:
+    discard
   
   socket.close()
   return result

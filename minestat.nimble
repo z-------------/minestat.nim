@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.0.0"
+version       = "0.0.1"
 author        = "Zack Guard"
 description   = "MineStat - Minecraft server status query library - for Nim"
 license       = "GPL-3.0-or-later"
