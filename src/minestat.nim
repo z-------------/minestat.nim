@@ -22,7 +22,7 @@ import std/asyncnet
 import std/times
 import std/strutils
 import std/options
-import std/encodings
+import pkg/encode
 
 const
   NumFields = 6 # number of values expected from server
@@ -40,7 +40,7 @@ type
     latency*: int64 # ping to to server in milliseconds
 
 template clean(data: string): string =
-  data.convert("UTF-8", "UTF-16BE")
+  data.fromUtf16Be()
 
 proc withTimeout[T](fut: Future[T]; timeout: int): Future[Option[T]] {.async.} =
   ## If fut completes within timeout, returns some(fut.value).
