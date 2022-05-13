@@ -26,6 +26,7 @@ import pkg/encode
 
 const
   NumFields = 6 # number of values expected from server
+  DefaultPort = 25565
   DefaultTimeout = 5000 # default TCP timeout in milliseconds
 
 type
@@ -59,7 +60,7 @@ func parseServerResponse*(data: string; result: var MineStat) =
     result.currentPlayers = infos[4].clean.parseInt
     result.maxPlayers = infos[5].clean.parseInt
 
-proc initMineStat*(address: string; port: int; timeout = DefaultTimeout): Future[MineStat] {.async.} =
+proc initMineStat*(address: string; port = DefaultPort; timeout = DefaultTimeout): Future[MineStat] {.async.} =
   var result: MineStat
 
   result.address = address
@@ -84,5 +85,5 @@ proc initMineStat*(address: string; port: int; timeout = DefaultTimeout): Future
 
   return result
 
-proc initMineStatSync*(address: string; port: int; timeout = DefaultTimeout): MineStat =
+proc initMineStatSync*(address: string; port = DefaultPort; timeout = DefaultTimeout): MineStat =
   waitFor initMineStat(address, port, timeout)
