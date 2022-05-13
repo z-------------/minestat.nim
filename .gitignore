@@ -1,5 +1,8 @@
-.vscode
+*
+!**/
+!*.*
 
-minestat
-
+*.exe
+*.swp
 *.js
+.vscode
