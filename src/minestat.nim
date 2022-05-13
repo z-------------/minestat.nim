@@ -27,26 +27,29 @@ import pkg/encode
 const
   NumFields = 6 # number of values expected from server
   DefaultPort = 25565
-  DefaultTimeout = 5000 # default TCP timeout in milliseconds
+  DefaultTimeoutMs = 5000 # default TCP timeout in milliseconds
 
 type
   MineStat* = object
     address*: string
     port*: int
-    online*: bool # online or offline?
-    version*: string # server version
-    motd*: string # message of the day
-    currentPlayers*: int # current number of players online
-    maxPlayers*: int # maximum player capacity
-    latency*: int64 # ping to to server in milliseconds
+    online*: bool ## whether the server is online
+    version*: string ## server version
+    motd*: string ## message of the day
+    currentPlayers*: int ## number of players currently online
+    maxPlayers*: int ## maximum player capacity
+    latencyMs*: int64 ## ping to server in milliseconds
+
+template latency*(minestat: MineStat): int64 =
+  minestat.latencyMs
 
 template clean(data: string): string =
   data.fromUtf16Be()
 
-proc withTimeout[T](fut: Future[T]; timeout: int): Future[Option[T]] {.async.} =
-  ## If fut completes within timeout, returns some(fut.value).
+proc withTimeout[T](fut: Future[T]; timeoutMs: int): Future[Option[T]] {.async.} =
+  ## If fut completes within timeoutMs, returns some(fut.value).
   ## Else, returns none.
-  if await asyncdispatch.withTimeout(fut, timeout):
+  if await asyncdispatch.withTimeout(fut, timeoutMs):
     return some(fut.read)
   else:
     return none(T)
@@ -60,7 +63,7 @@ func parseServerResponse*(data: string; result: var MineStat) =
     result.currentPlayers = infos[4].clean.parseInt
     result.maxPlayers = infos[5].clean.parseInt
 
-proc initMineStat*(address: string; port = DefaultPort; timeout = DefaultTimeout): Future[MineStat] {.async.} =
+proc initMineStat*(address: string; port = DefaultPort; timeoutMs = DefaultTimeoutMs): Future[MineStat] {.async.} =
   var result: MineStat
 
   result.address = address
@@ -72,10 +75,10 @@ proc initMineStat*(address: string; port = DefaultPort; timeout = DefaultTimeout
   try:
     socket = newAsyncSocket()
     await socket.connect(address, Port(port))
-    result.latency = (getTime() - startTime).inMilliseconds
+    result.latencyMs = (getTime() - startTime).inMilliseconds
 
     await socket.send("\xFE\x01")
-    let data = await socket.recv(512).withTimeout(timeout)
+    let data = await socket.recv(512).withTimeout(timeoutMs)
     if data.isSome and data.get.len > 0:
       parseServerResponse(data.get, result)
   except OSError:
@@ -85,5 +88,5 @@ proc initMineStat*(address: string; port = DefaultPort; timeout = DefaultTimeout
 
   return result
 
-proc initMineStatSync*(address: string; port = DefaultPort; timeout = DefaultTimeout): MineStat =
-  waitFor initMineStat(address, port, timeout)
+proc initMineStatSync*(address: string; port = DefaultPort; timeoutMs = DefaultTimeoutMs): MineStat =
+  waitFor initMineStat(address, port, timeoutMs)
