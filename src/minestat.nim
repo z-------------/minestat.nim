@@ -50,7 +50,7 @@ proc withTimeout[T](fut: Future[T]; timeout: int): Future[Option[T]] {.async.} =
   else:
     return none(T)
 
-proc parseServerResponse*(data: string; result: var MineStat) =
+func parseServerResponse*(data: string; result: var MineStat) =
   let infos = data.split("\x00\x00")
   if infos.len >= NumFields:
     result.online = true
@@ -67,8 +67,9 @@ proc initMineStat*(address: string; port: int; timeout = DefaultTimeout): Future
 
   let startTime = getTime()
 
-  var socket = newAsyncSocket()
+  var socket: AsyncSocket
   try:
+    socket = newAsyncSocket()
     await socket.connect(address, Port(port))
     result.latency = (getTime() - startTime).inMilliseconds
 
@@ -78,8 +79,9 @@ proc initMineStat*(address: string; port: int; timeout = DefaultTimeout): Future
       parseServerResponse(data.get, result)
   except OSError:
     discard
-  
-  socket.close()
+  finally:
+    socket.close()
+
   return result
 
 proc initMineStatSync*(address: string; port: int; timeout = DefaultTimeout): MineStat =
