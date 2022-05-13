@@ -84,7 +84,8 @@ proc initMineStat*(address: string; port = DefaultPort; timeoutMs = DefaultTimeo
   except OSError:
     discard
   finally:
-    socket.close()
+    if not socket.isNil:
+      socket.close()
 
   return result
 
